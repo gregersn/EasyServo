@@ -1,6 +1,11 @@
 #include <EasyServo.h>
 #include <Arduino.h>
 
+EasyServo::EasyServo() {
+    this->target_pos = 90;
+    this->pos = 90;
+}
+
 void EasyServo::set_speed(unsigned int s) {
     /*
         Let a speed of 1000 indicate 
@@ -52,3 +57,10 @@ void EasyServo::update(unsigned long _time) {
     this->last_update = _time;
 }
 
+bool EasyServo::is_moving() {
+    if((int)this->pos == this->target_pos) {
+        return false;
+    }
+
+    return true;
+}

@@ -13,12 +13,15 @@ class EasyServo: public Servo
         unsigned int speed;
 
     public:
+        EasyServo();
         void set_speed(unsigned int s);
         unsigned int get_speed();
         double get_pos();
 
         void move(int pos);
         void update(unsigned long _time);
+
+        bool is_moving();
 };
 
 #endif
