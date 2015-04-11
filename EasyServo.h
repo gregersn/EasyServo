@@ -19,6 +19,7 @@ class EasyServo: public Servo
         double get_pos();
 
         void move(int pos);
+        void move(int pos, unsigned int t);
         void update(unsigned long _time);
 
         bool is_moving();

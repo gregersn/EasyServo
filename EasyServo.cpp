@@ -29,6 +29,15 @@ void EasyServo::move(int pos) {
     this->update(millis());
 }
 
+void EasyServo::move(int pos, unsigned int t) {
+    // Moves the servo to the new pos using the time specified
+    // That will override and set a new speed
+    int dx = abs(pos - this->pos); // The distance to move in degrees
+    unsigned int speed = (180 / dx) * t;
+    this->set_speed(speed);
+    this->move(pos);
+}
+
 void EasyServo::update(unsigned long _time) {
     long delta = 0;
     if(_time < this->last_update) {
