@@ -82,7 +82,7 @@ void EasyServo::move(int n_pos, unsigned int t) {
     // Moves the servo to the new pos using the time specified
     // That will override and set a new speed
     int dx = abs(n_pos - this->pos); // The distance to move in pulse widths
-    unsigned int speed = ((this->_max - this->_min) * t) / dx;
+    unsigned int speed = ((this->_max - this->_min) / dx) * t;
     this->set_speed(speed);
     this->move(n_pos);
 }
