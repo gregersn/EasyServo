@@ -2,8 +2,33 @@
 #include <Arduino.h>
 
 EasyServo::EasyServo() {
-    this->target_pos = 90;
-    this->pos = 90;
+    this->_min = MIN_PULSE_WIDTH;
+    this->_max = MAX_PULSE_WIDTH
+    
+    this->target_pos = DEFAULT_PULSE_WIDTH;
+    this->pos = DEFAULT_PULSE_WIDTH;
+    this->moving = false;
+    this->last_update = 0;
+
+    this->write(this->pos);
+    this->set_speed(1000);
+}
+
+uint8_t EasyServo::attach(int pin) {
+    /*Serial.println(MIN_PULSE_WIDTH);
+    Serial.println(MAX_PULSE_WIDTH);*/
+    return this->attach(pin, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
+}
+
+uint8_t EasyServo::attach(int pin, int _min, int _max) {
+    /*Serial.println("Attach-2");
+    Serial.println(_min);
+    Serial.println(_max);*/
+    this->_min = _min;
+    this->_max = _max;
+    /*Serial.println(this->_min);
+    Serial.println(this->_max);*/
+    return Servo::attach(pin, _min, _max);
 }
 
 void EasyServo::set_speed(unsigned int s) {
@@ -12,8 +37,13 @@ void EasyServo::set_speed(unsigned int s) {
         a one second duration of movement from one extreme
         to the other
     */
+    //Serial.println("Set speed");
     this->speed = s;
-    this->delta_pos = 180.0 / (double)s;
+    this->delta_pos = abs(this->_max - this->_min) / (float)s;
+    /*Serial.println(this->_max);
+    Serial.println(this->_min);*/
+    //Serial.print("Delta pos: ");
+    //Serial.println(this->delta_pos);
 }
 
 unsigned int EasyServo::get_speed() {
@@ -24,52 +54,88 @@ double EasyServo::get_pos() {
     return this->pos;
 }
 
-void EasyServo::move(int pos) {
+void EasyServo::write(int pos) {
+    this->pos = pos;
     this->target_pos = pos;
+    this->moving = false;
+    this->last_update = millis();
+    Servo::write(pos);
+}
+
+void EasyServo::move(int n_pos) {
+    if(n_pos < this->_min) {
+        n_pos = map(n_pos, 0, 180, this->_min, this->_max);
+    }
+    this->last_update = millis();
+    this->target_pos = n_pos;
+    this->moving = true;
     this->update(millis());
 }
 
-void EasyServo::move(int pos, unsigned int t) {
+void EasyServo::move(int n_pos, unsigned int t) {
+    if(n_pos < this->_min) {
+        n_pos = map(n_pos, 0, 180, this->_min, this->_max);
+    }
     // Moves the servo to the new pos using the time specified
     // That will override and set a new speed
-    int dx = abs(pos - this->pos); // The distance to move in degrees
-    unsigned int speed = (180 / dx) * t;
+    int dx = abs(n_pos - this->pos); // The distance to move in pulse widths
+    unsigned int speed = ((this->_max - this->_min) * t) / dx;
     this->set_speed(speed);
-    this->move(pos);
+    this->move(n_pos);
 }
 
+
 void EasyServo::update(unsigned long _time) {
+    //Serial.println("UPDATE!");
     long delta = 0;
     if(_time < this->last_update) {
         // Handle overflow of time
+        Serial.println("Time overflow");
         delta = (0xffffffff - this->last_update) + _time;
     }
     else {
         delta = _time - this->last_update;
     }
-    if((int)this->pos > this->target_pos)
+
+    if(delta < 10)
     {
-        this->pos -= delta * this->delta_pos;
-        if((int)this->pos < this->target_pos) {
-            this->pos = this->target_pos;
-        }
-    }
-    else if((int)this->pos < this->target_pos) {
-        this->pos += delta * this->delta_pos;
-        if((int)this->pos > this->target_pos) {
-            this->pos = this->target_pos;
-        }
+        // Don't update too often, this should maybe be speed based?
+        //Serial.println("Not long enough");
+        return; 
     }
 
-    this->write((int)this->pos);
+    if((unsigned int)this->pos > this->target_pos) 
+    {
+        this->pos -= (delta * this->delta_pos);
+
+        if((int)this->pos <= this->target_pos) 
+        {
+            this->pos = this->target_pos;
+            this->moving = false;
+        }
+    }
+    else if((unsigned int)this->pos < this->target_pos) 
+    {
+        this->pos += (delta * this->delta_pos);
+        if((int)this->pos >= this->target_pos) 
+        {
+            this->pos = this->target_pos;
+            this->moving = false;
+        }
+    }
+    else
+    {
+        this->moving = false;
+    }
 
     this->last_update = _time;
+    //if(!this->moving) return;
+    //Serial.println(this->pos);
+    Servo::writeMicroseconds((unsigned int)this->pos);
+
 }
 
-bool EasyServo::is_moving() {
-    if((int)this->pos == this->target_pos) {
-        return false;
-    }
 
-    return true;
+bool EasyServo::is_moving() {
+    return this->moving;
 }
