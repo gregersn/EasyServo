@@ -15,26 +15,37 @@ class EasyServo: public Servo
         unsigned int _min;
         unsigned int _max;
 
+        int checkpos(int n_pos);
+
     public:
         EasyServo();
 
         uint8_t attach(int pin); 
         uint8_t attach(int pin, int _min, int _max); // as above but also sets min and max values for writes. 
 
+        // Set the speed of the servo movements
         void set_speed(unsigned int s);
+
+        // Get current servo speed
         unsigned int get_speed();
+
+        // Get (internal) position of servo
         double get_pos();
 
-        void write(int pos);
+        // These work as the original servo writes, no limitation on speed
+        void write(int pos); // If value < 200 assume degrees, else microseconds
+        void writeMicroseconds(int value);
 
+        // Moves the servoes at the assigned speed
         void move(int pos);
         void move(int pos, unsigned int t);
+        //void moveMicroseconds(int pos);
+        //void moveMicroseconds(int pos, unsigned int t);
 
-        void moveMicroseconds(int value);
-        void moveMicroseconds(int value, unsigned int t);
-
+        // Update with current time to move the servo
         void update(unsigned long _time);
 
+        // Return true if the servo has not reached latest destination
         bool is_moving();
 };
 

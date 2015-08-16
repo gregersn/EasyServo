@@ -54,21 +54,29 @@ double EasyServo::get_pos() {
     return this->pos;
 }
 
-void EasyServo::write(int n_pos) {
+int check_pos(int n_pos) {
     if(n_pos < this->_min) {
+        if(n_pos < 0) n_pos = 0;
+        if(n_pos > 180) n_pos = 180;
         n_pos = map(n_pos, 0, 180, this->_min, this->_max);
     }
+    return n_pos;    
+}
+
+void EasyServo::write(int n_pos) {
+    this->writeMicroseconds(this->check_pos(n_pos));
+}
+
+void EasyServo::writeMicroseconds(int n_pos) {
     this->pos = n_pos;
     this->target_pos = n_pos;
     this->moving = false;
     this->last_update = millis();
-    Servo::write(n_pos);
+    Servo::writeMicroseconds(n_pos);
 }
 
 void EasyServo::move(int n_pos) {
-    if(n_pos < this->_min) {
-        n_pos = map(n_pos, 0, 180, this->_min, this->_max);
-    }
+    n_pos = this->check_pos(n_pos);
     this->last_update = millis();
     this->target_pos = n_pos;
     this->moving = true;
@@ -76,9 +84,7 @@ void EasyServo::move(int n_pos) {
 }
 
 void EasyServo::move(int n_pos, unsigned int t) {
-    if(n_pos < this->_min) {
-        n_pos = map(n_pos, 0, 180, this->_min, this->_max);
-    }
+    n_pos = this->check_pos(n_pos);
     // Moves the servo to the new pos using the time specified
     // That will override and set a new speed
     int dx = abs(n_pos - this->pos); // The distance to move in pulse widths
