@@ -7,15 +7,18 @@ class EasyServo: public Servo
 {
     private:
         double delta_pos; // Ammount to move in each timestep
-        int target_pos;   // The position we are moving towards
+        unsigned int prev_pos; //
         double pos;       // The current position
+        unsigned int target_pos;   // The position we are moving towards
         unsigned long last_update;  // The time when the servo was last updated
         unsigned int speed;         // The speed to move at
         bool moving;
         unsigned int _min;
         unsigned int _max;
+        unsigned long starttime;
+        unsigned int duration;
 
-        int checkpos(int n_pos);
+        int check_pos(int n_pos);
 
     public:
         EasyServo();
@@ -30,7 +33,7 @@ class EasyServo: public Servo
         unsigned int get_speed();
 
         // Get (internal) position of servo
-        double get_pos();
+        int get_pos();
 
         // These work as the original servo writes, no limitation on speed
         void write(int pos); // If value < 200 assume degrees, else microseconds

@@ -15,3 +15,4 @@ to pin as usual.
 To move the servo use servo->move(pos); and make sure that servo->update(millis())
 is called often to update the position. The update function can maybe be moved
 to a timer or something. A side effect of not updating often might be jerky motion.
+

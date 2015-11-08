@@ -37,24 +37,18 @@ void EasyServo::set_speed(unsigned int s) {
         a one second duration of movement from one extreme
         to the other
     */
-    //Serial.println("Set speed");
     this->speed = s;
-    this->delta_pos = abs(this->_max - this->_min) / (float)s;
-    /*Serial.println(this->_max);
-    Serial.println(this->_min);*/
-    //Serial.print("Delta pos: ");
-    //Serial.println(this->delta_pos);
 }
 
 unsigned int EasyServo::get_speed() {
     return this->speed;
 }
 
-double EasyServo::get_pos() {
+int EasyServo::get_pos() {
     return this->pos;
 }
 
-int check_pos(int n_pos) {
+int EasyServo::check_pos(int n_pos) {
     if(n_pos < this->_min) {
         if(n_pos < 0) n_pos = 0;
         if(n_pos > 180) n_pos = 180;
@@ -72,31 +66,36 @@ void EasyServo::writeMicroseconds(int n_pos) {
     this->target_pos = n_pos;
     this->moving = false;
     this->last_update = millis();
+    this->duration = 0;
     Servo::writeMicroseconds(n_pos);
 }
 
 void EasyServo::move(int n_pos) {
     n_pos = this->check_pos(n_pos);
-    this->last_update = millis();
-    this->target_pos = n_pos;
-    this->moving = true;
-    this->update(millis());
+    double length = abs(n_pos - this->pos);
+    double max_length = abs(this->_max - this->_min);
+
+    double duration = (this->speed * length) / max_length;
+
+    this->move(n_pos, duration);
 }
 
 void EasyServo::move(int n_pos, unsigned int t) {
     n_pos = this->check_pos(n_pos);
-    // Moves the servo to the new pos using the time specified
-    // That will override and set a new speed
-    int dx = abs(n_pos - this->pos); // The distance to move in pulse widths
-    unsigned int speed = ((this->_max - this->_min) / dx) * t;
-    this->set_speed(speed);
-    this->move(n_pos);
+    this->prev_pos = this->target_pos;
+    this->target_pos = n_pos;
+    this->duration = t;
+    this->starttime = millis();
+    this->moving = true;
+    this->update(millis());
 }
 
 
 void EasyServo::update(unsigned long _time) {
-    //Serial.println("UPDATE!");
     long delta = 0;
+
+    /*
+    // Currently not used for anything sensible.
     if(_time < this->last_update) {
         // Handle overflow of time
         Serial.println("Time overflow");
@@ -104,44 +103,21 @@ void EasyServo::update(unsigned long _time) {
     }
     else {
         delta = _time - this->last_update;
-    }
+    }*/
 
-    if(delta < 10)
-    {
-        // Don't update too often, this should maybe be speed based?
-        //Serial.println("Not long enough");
-        return; 
-    }
+    delta = _time - this->starttime;
 
-    if((unsigned int)this->pos > this->target_pos) 
-    {
-        this->pos -= (delta * this->delta_pos);
-
-        if((int)this->pos <= this->target_pos) 
-        {
-            this->pos = this->target_pos;
-            this->moving = false;
-        }
-    }
-    else if((unsigned int)this->pos < this->target_pos) 
-    {
-        this->pos += (delta * this->delta_pos);
-        if((int)this->pos >= this->target_pos) 
-        {
-            this->pos = this->target_pos;
-            this->moving = false;
-        }
-    }
-    else
-    {
+    if(delta >= this->duration) {
+        this->pos = this->target_pos;
         this->moving = false;
+    } else {
+        this->pos = map(delta, 0, this->duration, this->prev_pos, this->target_pos);
     }
 
-    this->last_update = _time;
-    //if(!this->moving) return;
-    //Serial.println(this->pos);
     Servo::writeMicroseconds((unsigned int)this->pos);
+    this->last_update = _time;
 
+    return;
 }
 
 
