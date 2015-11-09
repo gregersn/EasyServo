@@ -82,6 +82,9 @@ void EasyServo::move(int n_pos) {
 
 void EasyServo::move(int n_pos, unsigned int t) {
     n_pos = this->check_pos(n_pos);
+    if(n_pos == target_pos) {
+        return;
+    }
     this->prev_pos = this->target_pos;
     this->target_pos = n_pos;
     this->duration = t;
